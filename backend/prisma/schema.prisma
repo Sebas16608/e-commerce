@@ -1,13 +1,265 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  name          String
+  role          String         @default("CUSTOMER")
+  phoneNumber   String?
+  avatar        String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  store         Store?
+  addresses     Address[]
+  cart          Cart?
+  orders        Order[]
+  reviews       Review[]
+  notifications Notification[]
+  uploads       Upload[]
+  analytics     AnalyticsEvent[]
+}
+
+model Store {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  slug        String    @unique
+  logo        String?
+  banner      String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  ownerId   String  @unique
+  owner     User    @relation(fields: [ownerId], references: [id])
+  products  Product[]
+  orders    Order[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  slug        String    @unique
+  image       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  price         Float
+  compareAtPrice Float?
+  stock         Int       @default(0)
+  slug          String    @unique
+  isActive      Boolean   @default(true)
+  isFeatured    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  storeId    String
+  store      Store      @relation(fields: [storeId], references: [id])
+  categoryId String?
+  category   Category?  @relation(fields: [categoryId], references: [id])
+
+  reviews       Review[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  analytics     AnalyticsEvent[]
+}
+
+model Cart {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  items CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique
+  status        String   @default("PENDING")
+  totalAmount   Float
+  subtotal      Float
+  shippingCost  Float    @default(0)
+  taxAmount     Float    @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  storeId String?
+  store   Store? @relation(fields: [storeId], references: [id])
+
+  shippingAddressId String?
+  shippingAddress   Address? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+
+  items     OrderItem[]
+  payments  Payment[]
+  shipments Shipment[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  quantity   Int
+  unitPrice  Float
+  totalPrice Float
+  createdAt  DateTime @default(now())
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  title     String?
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  label      String?
+  street     String
+  city       String
+  state      String?
+  postalCode String
+  country    String  @default("PE")
+  isDefault  Boolean @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
+
+  shippingOrders Order[] @relation("ShippingAddress")
+  shipments      Shipment[]
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  method        String
+  status        String   @default("PENDING")
+  amount        Float
+  transactionId String?
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderId String
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  proof PaymentProof?
+}
+
+model PaymentProof {
+  id         String   @id @default(cuid())
+  imageUrl   String
+  uploadedAt DateTime @default(now())
+
+  paymentId String  @unique
+  payment   Payment @relation(fields: [paymentId], references: [id])
+}
+
+model Shipment {
+  id                String    @id @default(cuid())
+  carrier           String?
+  trackingNumber    String?
+  status            String    @default("PENDING")
+  shippedAt         DateTime?
+  estimatedDeliveryAt DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  title     String
+  message   String?
+  isRead    Boolean  @default(false)
+  relatedId String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  event     String
+  sessionId String?
+  metadata  String?
+  timestamp DateTime @default(now())
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+}
+
+model Upload {
+  id         String   @id @default(cuid())
+  url        String
+  filename   String
+  mimeType   String
+  size       Int
+  entityType String?
+  entityId   String?
+  createdAt  DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }

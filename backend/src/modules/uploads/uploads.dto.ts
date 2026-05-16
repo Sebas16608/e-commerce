@@ -22,7 +22,7 @@ export class UploadsService {
       // 1. Crear el flujo de subida (Stream) hacia Cloudinary
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: `ecommerce/${folder}`, // Organiza tus archivos por subcarpetas
+          folder: `ecommerce/${folder}`, // Organiza archivos por subcarpetas
           resource_type: "image",
           allowed_formats: ["jpg", "jpeg", "png", "webp"], // Filtro estricto en la API
         },

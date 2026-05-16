@@ -7,17 +7,23 @@ datasource db {
   provider = "sqlite"
 }
 
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  name          String
-  role          String         @default("CUSTOMER")
-  phoneNumber   String?
-  avatar        String?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  name        String
+  role        Role     @default(BUYER)
+  phoneNumber String?
+  avatar      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   store         Store?
   addresses     Address[]
@@ -30,59 +36,59 @@ model User {
 }
 
 model Store {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
-  slug        String    @unique
+  slug        String   @unique
   logo        String?
   banner      String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  ownerId   String  @unique
-  owner     User    @relation(fields: [ownerId], references: [id])
-  products  Product[]
-  orders    Order[]
+  ownerId  String    @unique
+  owner    User      @relation(fields: [ownerId], references: [id])
+  products Product[]
+  orders   Order[]
 }
 
 model Category {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
-  slug        String    @unique
+  slug        String   @unique
   image       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  parentId  String?
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
-  products  Product[]
+  parentId String?
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
 }
 
 model Product {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  price         Float
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  price          Float
   compareAtPrice Float?
-  stock         Int       @default(0)
-  slug          String    @unique
-  isActive      Boolean   @default(true)
-  isFeatured    Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  stock          Int      @default(0)
+  slug           String   @unique
+  isActive       Boolean  @default(true)
+  isFeatured     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   storeId    String
-  store      Store      @relation(fields: [storeId], references: [id])
+  store      Store     @relation(fields: [storeId], references: [id])
   categoryId String?
-  category   Category?  @relation(fields: [categoryId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id])
 
-  reviews       Review[]
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  analytics     AnalyticsEvent[]
+  reviews    Review[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  analytics  AnalyticsEvent[]
 }
 
 model Cart {
@@ -102,29 +108,29 @@ model CartItem {
   createdAt DateTime @default(now())
 
   cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 
   @@unique([cartId, productId])
 }
 
 model Order {
-  id            String   @id @default(cuid())
-  orderNumber   String   @unique
-  status        String   @default("PENDING")
-  totalAmount   Float
-  subtotal      Float
-  shippingCost  Float    @default(0)
-  taxAmount     Float    @default(0)
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  status       String   @default("PENDING")
+  totalAmount  Float
+  subtotal     Float
+  shippingCost Float    @default(0)
+  taxAmount    Float    @default(0)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   userId  String
-  user    User   @relation(fields: [userId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
   storeId String?
-  store   Store? @relation(fields: [storeId], references: [id])
+  store   Store?  @relation(fields: [storeId], references: [id])
 
   shippingAddressId String?
   shippingAddress   Address? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
@@ -156,44 +162,44 @@ model Review {
   updatedAt DateTime @updatedAt
 
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
 }
 
 model Address {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   label      String?
   street     String
   city       String
   state      String?
   postalCode String
-  country    String  @default("PE")
-  isDefault  Boolean @default(false)
+  country    String   @default("PE")
+  isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   userId String
-  user   User    @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
-  shippingOrders Order[] @relation("ShippingAddress")
+  shippingOrders Order[]    @relation("ShippingAddress")
   shipments      Shipment[]
 }
 
 model Payment {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   method        String
-  status        String   @default("PENDING")
+  status        String    @default("PENDING")
   amount        Float
   transactionId String?
   paidAt        DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   orderId String
-  order   Order   @relation(fields: [orderId], references: [id])
+  order   Order  @relation(fields: [orderId], references: [id])
 
   proof PaymentProof?
 }
@@ -208,15 +214,15 @@ model PaymentProof {
 }
 
 model Shipment {
-  id                String    @id @default(cuid())
-  carrier           String?
-  trackingNumber    String?
-  status            String    @default("PENDING")
-  shippedAt         DateTime?
+  id                  String    @id @default(cuid())
+  carrier             String?
+  trackingNumber      String?
+  status              String    @default("PENDING")
+  shippedAt           DateTime?
   estimatedDeliveryAt DateTime?
-  deliveredAt       DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  deliveredAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   orderId   String
   order     Order    @relation(fields: [orderId], references: [id])
